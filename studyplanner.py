@@ -91,32 +91,39 @@ textarea, input, select {{
 
 st.title("📚 Study Planner")
 
-# --- Sidebar Account ---
-st.sidebar.subheader("🔒 Account")
-account_action = st.sidebar.radio("Account Action", ["Login","Sign Up"])
-
+# --- Sidebar Account & Controls (hidden in one bar) ---
 if "logged_in_user" not in st.session_state:
     st.session_state["logged_in_user"] = None
 
-if account_action == "Sign Up":
-    new_user = st.sidebar.text_input("Username")
-    new_pass = st.sidebar.text_input("Password",type="password")
-    if st.sidebar.button("Sign Up"):
-        success,msg = sign_up(new_user,new_pass)
-        if success:
-            st.sidebar.success(msg)
-        else:
-            st.sidebar.error(msg)
+with st.sidebar.expander("🔒 Account & Controls", expanded=False):
+    account_action = st.radio("Account Action", ["Login","Sign Up"], key="account_action_sidebar")
 
-elif account_action == "Login":
-    user = st.sidebar.text_input("Username")
-    pw = st.sidebar.text_input("Password",type="password")
-    if st.sidebar.button("Login"):
-        if login(user,pw):
-            st.sidebar.success(f"Logged in as {user}")
-            st.session_state["logged_in_user"] = user
-        else:
-            st.sidebar.error("Invalid username or password")
+    if account_action == "Sign Up":
+        new_user = st.text_input("Username", key="signup_username")
+        new_pass = st.text_input("Password", type="password", key="signup_password")
+        if st.button("Sign Up", key="signup_btn"):
+            success, msg = sign_up(new_user, new_pass)
+            if success:
+                st.success(msg)
+            else:
+                st.error(msg)
+
+    elif account_action == "Login":
+        user = st.text_input("Username", key="login_username")
+        pw = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login", key="login_btn"):
+            if login(user, pw):
+                st.success(f"Logged in as {user}")
+                st.session_state["logged_in_user"] = user
+            else:
+                st.error("Invalid username or password")
+
+    if st.session_state.get("logged_in_user"):
+        if st.button("Log out", key="logout_btn"):
+            st.session_state["logged_in_user"] = None
+            st.experimental_rerun()
+
+    st.checkbox("Enable delete buttons", key="enable_delete")
 
 if not st.session_state["logged_in_user"]:
     st.warning("Please log in or sign up to access the Study Planner.")
@@ -225,7 +232,7 @@ if menu == "Planner":
                 update_task(i, new_subject, new_description, new_date)
                 st.success("Task updated!")
                 st.experimental_rerun()
-            if st.button(f"Delete Task {i}"):
+            if st.session_state.get("enable_delete") and st.button(f"Delete Task {i}"):
                 delete_task(i)
                 st.experimental_rerun()
 
@@ -250,7 +257,7 @@ elif menu == "Timetable":
                 update_timetable(i, new_day, new_time, new_subject, new_notes)
                 st.success("Timetable updated!")
                 st.experimental_rerun()
-            if st.button(f"Delete Timetable {i}"):
+            if st.session_state.get("enable_delete") and st.button(f"Delete Timetable {i}"):
                 delete_timetable(i)
                 st.rerun()
 
@@ -273,7 +280,7 @@ elif menu == "Sessions":
                 update_session(i, new_name, new_date, new_notes)
                 st.success("Session updated!")
                 st.experimental_rerun()
-            if st.button(f"Delete Session {i}"):
+            if st.session_state.get("enable_delete") and st.button(f"Delete Session {i}"):
                 delete_session(i)
                 st.rerun()
 
